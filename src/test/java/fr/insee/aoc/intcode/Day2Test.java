@@ -9,13 +9,16 @@ public class Day2Test {
 	@Test
 	public void part1test0() {
 		Machine machine = new Machine("./src/test/resources/day2-part1");
-		assertEquals(machine.exec(), 3500);
+		machine.exec();
+		assertEquals((int)machine.getProgram().get(0), 3500);
 	}
 
 	@Test
 	public void part1result() {
 		Machine machine = new Machine("./src/main/resources/day2", 12, 2);
-		assertEquals(machine.exec(), 3895705);
+		machine.exec();
+		assertEquals((int)machine.getProgram().get(0), 3895705);
+
 	}
 
 	@Test
