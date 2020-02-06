@@ -5,16 +5,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import fr.insee.aoc.utils.Utils;
 
-public class Machine {
+public class Machine implements Runnable {
 
 	private List<Integer> program;
 	private BlockingQueue<Integer> input = new LinkedBlockingQueue<Integer>();
 	private BlockingQueue<Integer> output = new LinkedBlockingQueue<Integer>();
 	private static final int NB_MAX_PARAMS = 3;
+	private static final int NB_MAX_DEPASSEMENT_LISTE = 3;
 
 	/**
 	 * Crée une machine à intcode selon le programme lu dans path
@@ -22,6 +24,9 @@ public class Machine {
 	public Machine(String path) {
 		program = Arrays.asList(Utils.readLine(path).split(",")).stream().map(s -> Integer.valueOf(s))
 				.collect(Collectors.toList());
+		for (int i = 0; i < NB_MAX_DEPASSEMENT_LISTE; i++) {
+			program.add(0);
+		}
 	}
 
 	/**
@@ -38,18 +43,18 @@ public class Machine {
 		program.set(2, verb);
 	}
 
-	public void exec() {
+	@Override
+	public void run() {
 		int pointer = 0;
 		execution: while (true) {
-			switch (program.get(pointer)) {
+			List<Integer> parametres = obtenirParametres(pointer);
+			switch (program.get(pointer) % 100) {
 			case 1:
-				program.set(program.get(pointer + 3),
-						program.get(program.get(pointer + 1)) + program.get(program.get(pointer + 2)));
+				program.set(program.get(pointer + 3), parametres.get(0) + parametres.get(1));
 				pointer += 4;
 				break;
 			case 2:
-				program.set(program.get(pointer + 3),
-						program.get(program.get(pointer + 1)) * program.get(program.get(pointer + 2)));
+				program.set(program.get(pointer + 3), parametres.get(0) * parametres.get(1));
 				pointer += 4;
 				break;
 			case 3:
@@ -58,8 +63,31 @@ public class Machine {
 				pointer += 2;
 				break;
 			case 4:
-				writeOutput(program.get(program.get(pointer + 1)));
+				System.out.println("on a output " + parametres.get(0));
+				writeOutput(parametres.get(0));
 				pointer += 2;
+				break;
+			case 5:
+				pointer = (parametres.get(0) != 0) ? parametres.get(1) : pointer + 3;
+				break;
+			case 6:
+				pointer = (parametres.get(0) == 0) ? parametres.get(1) : pointer + 3;
+				break;
+			case 7:
+				if (parametres.get(0) < parametres.get(1)) {
+					program.set(program.get(pointer + 3), 1);
+				} else {
+					program.set(program.get(pointer + 3), 0);
+				}
+				pointer += 4;
+				break;
+			case 8:
+				if (parametres.get(0).equals(parametres.get(1))) {
+					program.set(program.get(pointer + 3), 1);
+				} else {
+					program.set(program.get(pointer + 3), 0);
+				}
+				pointer += 4;
 				break;
 			case 99:
 				break execution;
@@ -70,9 +98,37 @@ public class Machine {
 		}
 	}
 
+	// Fournit systématiquement les potentiels 3 paramètres suivant selon le mode de
+	// lecture
+	private List<Integer> obtenirParametres(int pointer) {
+		int tailleMax = program.size();
+		List<Mode> listModes = manageLiteral(program.get(pointer));
+		List<Integer> parametres = new ArrayList<>();
+		for (int i = 0; i < NB_MAX_PARAMS; i++) {
+			int parametre;
+			if (listModes.get(i) == Mode.IMMEDIATE) {
+				parametre = program.get(pointer + i + 1);
+			} else {
+				if (program.get(pointer + i + 1) >= tailleMax) {
+					parametre = 0;
+				} else {
+					parametre = program.get(program.get(pointer + i + 1));
+				}
+			}
+			parametres.add(parametre);
+		}
+		return parametres;
+	}
+
 	// Seule la machine peut lire ses inputs
 	private int readInput() {
-		return this.input.poll();
+		try {
+			return this.input.poll(3600, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	// Seule la machine peut écrire ses outputs
@@ -86,8 +142,14 @@ public class Machine {
 	}
 
 	// L'output doit être lisible hors de la classe
-	public int readOutput() {
-		return this.output.poll();
+	public Integer readOutput() {
+		try {
+			return this.output.poll(3600, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	public List<Integer> getProgram() {
@@ -109,14 +171,14 @@ public class Machine {
 		int resultante = opcode / 100;
 		while (resultante != 0) {
 			if (resultante % 10 == 1) {
-				list.add(Mode.LITTERAL);
+				list.add(Mode.IMMEDIATE);
 			} else {
-				list.add(Mode.RELATIF);
+				list.add(Mode.POSITION);
 			}
 			resultante /= 10;
 		}
 		while (list.size() < NB_MAX_PARAMS) {
-			list.add(Mode.RELATIF);
+			list.add(Mode.POSITION);
 		}
 		return list;
 	}
@@ -124,7 +186,7 @@ public class Machine {
 	// Lecture du paramètre en mode littéral (valeur brute) ou relative (on prend la
 	// valeur de la case mémoire associée)
 	private enum Mode {
-		LITTERAL, RELATIF
+		IMMEDIATE, POSITION
 	}
 
 }
