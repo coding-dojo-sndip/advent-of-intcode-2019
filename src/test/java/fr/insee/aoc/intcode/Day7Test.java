@@ -1,5 +1,8 @@
 package fr.insee.aoc.intcode;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -11,9 +14,27 @@ public class Day7Test {
 	@Test
 	public void amplificationCircuitTest() {
 
-		List<Integer> inputs = IntStream.range(0, 5).mapToObj(a -> (Integer) a).collect(Collectors.toList());
+		// boxed() = mapToObj(a -> (Integer) a)
+		List<Integer> inputs = IntStream.range(0, 5).boxed().collect(Collectors.toList());
+		List<List<Integer>> permutations = MachineService.generatePerm(inputs);
 
-		MachineService.amplificationCircuit(inputs, "./src/main/resources/day7");
+		assertEquals((Integer) 20413,
+				permutations.stream()
+						.map(perm -> MachineService.amplificationCircuit(perm, "./src/main/resources/day7"))
+						.max(Comparator.naturalOrder()).orElseThrow(UnsupportedOperationException::new));
+	}
+	
+	@Test
+	public void amplificationCircuitTest2() {
+
+		// boxed() = mapToObj(a -> (Integer) a)
+		List<Integer> inputs = IntStream.range(5, 10).boxed().collect(Collectors.toList());
+		List<List<Integer>> permutations = MachineService.generatePerm(inputs);
+
+		assertEquals((Integer) 3321777,
+				permutations.stream()
+						.map(perm -> MachineService.amplificationCircuit(perm, "./src/main/resources/day7"))
+						.max(Comparator.naturalOrder()).orElseThrow(UnsupportedOperationException::new));
 	}
 
 }

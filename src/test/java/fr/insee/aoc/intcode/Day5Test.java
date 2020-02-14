@@ -13,12 +13,12 @@ public class Day5Test {
 		machine.run();
 		Integer output;
 		int resultat = 0;
-		while ((output = machine.readOutput()) != null) {
+		while ((output = machine.readOutputImmediat()) != null) {
 			resultat = output;
 		}
 		assertEquals(resultat, 9219874);
 	}
-	
+
 	@Test
 	public void part2result() {
 		Machine machine = new Machine("./src/main/resources/day5");
@@ -26,8 +26,7 @@ public class Day5Test {
 		machine.run();
 		Integer output;
 		int resultat = 0;
-		while ((output = machine.readOutput()) != null) {
-			System.out.println(output);
+		while ((output = machine.readOutputImmediat()) != null) {
 			resultat = output;
 		}
 		assertEquals(resultat, 5893654);

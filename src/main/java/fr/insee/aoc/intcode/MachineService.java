@@ -44,21 +44,51 @@ public class MachineService {
 			machine.writeInput(input);
 			machines.add(machine);
 		}
-
+		List<Thread> listThreads = new ArrayList<>();
 		// Demarrage des 5 machines en parallèles (donc 5 threads)
 		for (Machine machine : machines) {
 			Thread thread = new Thread(machine);
 			thread.start();
+			listThreads.add(thread);
 		}
 
 		// On donne l'input 0 à la première machine
 		// On attend ensuite que chaque machine fournisse son output que l'on donne à la
 		// machine suivante
+		int n = 0;
 		machines.get(0).writeInput(0);
-		machines.get(1).writeInput(machines.get(0).readOutput());
-		machines.get(2).writeInput(machines.get(1).readOutput());
-		machines.get(3).writeInput(machines.get(2).readOutput());
-		machines.get(4).writeInput(machines.get(3).readOutput());
-		return machines.get(4).readOutput();
+		int result = machines.get(n).readOutput();
+
+		// Lorsqu'on arrive au début d'une nouvelle série d'amplificateur (n+1=0) on
+		// vérifie si le premier amplificateur est encore vivant
+		while ((n + 1) % listThreads.size() != 0 || listThreads.get(0).isAlive()) {
+			machines.get((n + 1) % listThreads.size()).writeInput(result);
+			n = (n + 1) % listThreads.size();
+			result = machines.get(n).readOutput();
+		}
+
+		return result;
 	}
+
+	// Retourne la liste des permutations d'une liste
+	// thx to stackoverflow :)
+	public static <T> List<List<T>> generatePerm(List<T> original) {
+		if (original.size() == 0) {
+			List<List<T>> result = new ArrayList<List<T>>();
+			result.add(new ArrayList<T>());
+			return result;
+		}
+		T firstElement = original.remove(0);
+		List<List<T>> returnValue = new ArrayList<List<T>>();
+		List<List<T>> permutations = generatePerm(original);
+		for (List<T> smallerPermutated : permutations) {
+			for (int index = 0; index <= smallerPermutated.size(); index++) {
+				List<T> temp = new ArrayList<T>(smallerPermutated);
+				temp.add(index, firstElement);
+				returnValue.add(temp);
+			}
+		}
+		return returnValue;
+	}
+
 }

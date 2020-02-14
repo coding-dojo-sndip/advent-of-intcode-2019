@@ -63,7 +63,7 @@ public class Machine implements Runnable {
 				pointer += 2;
 				break;
 			case 4:
-				System.out.println("on a output " + parametres.get(0));
+				System.out.println("Output : " + parametres.get(0));
 				writeOutput(parametres.get(0));
 				pointer += 2;
 				break;
@@ -125,8 +125,6 @@ public class Machine implements Runnable {
 		try {
 			return this.input.poll(3600, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			throw new UnsupportedOperationException();
 		}
 	}
@@ -146,10 +144,12 @@ public class Machine implements Runnable {
 		try {
 			return this.output.poll(3600, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 			throw new UnsupportedOperationException();
 		}
+	}
+
+	public Integer readOutputImmediat() {
+		return this.output.poll();
 	}
 
 	public List<Integer> getProgram() {
